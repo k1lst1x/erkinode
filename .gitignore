@@ -1,0 +1,21 @@
+node_modules/
+dist/
+release/
+test-results/
+*.log
+*.tgz
+.DS_Store
+.env*
+build/icon.iconset/
+*.pem
+*.key
+*.vault
+
+# Private design studies and local backup archives
+branding/explorations/
+*.zip
+*.bundle
+
+# Generated website and CI release staging
+_site/
+release-assets/

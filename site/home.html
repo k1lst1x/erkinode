@@ -1,0 +1,256 @@
+<section class="hero">
+  <div>
+    <div class="eyebrow">SSH · SFTP · LOCAL TERMINAL</div>
+    <h1>Your servers.<br /><span>Your freedom.</span></h1>
+    <p class="lede">
+      A calm workspace for your servers and your own machine. Open a terminal,
+      move a file, get back to building.
+    </p>
+    <div class="actions">
+      <div class="download-picker" id="download-picker">
+        <a
+          class="button primary"
+          id="primary-download"
+          href="#downloads"
+          aria-haspopup="menu"
+          aria-expanded="false"
+          ><img
+            id="primary-os-icon"
+            class="button-os-icon"
+            alt=""
+            width="18"
+            height="18"
+            hidden /><span id="primary-download-label">Download Erkinode</span>
+          <svg
+            class="download-chevron"
+            aria-hidden="true"
+            viewBox="0 0 14 8"
+            width="14"
+            height="8"
+          >
+            <path d="M1.5 1.5 7 6.5l5.5-5" /></svg
+        ></a>
+        <div class="download-menu" id="download-menu" role="menu" hidden>
+          <a role="menuitem" data-picker-download="mac-arm64">
+            <span>
+              <strong>Apple Silicon</strong>
+              <small>M1 · M2 · M3 · M4 · M5</small>
+            </span>
+            <img src="./assets/os-apple.svg" alt="" width="24" height="24" />
+          </a>
+          <a role="menuitem" data-picker-download="mac-x64">
+            <span
+              ><strong>Intel x64</strong><small>Core i5 · i7 · i9</small></span
+            >
+            <img src="./assets/os-apple.svg" alt="" width="24" height="24" />
+          </a>
+          <a role="menuitem" data-picker-download="win-x64">
+            <span
+              ><strong>Windows x64</strong><small>Windows 10 · 11</small></span
+            >
+            <img src="./assets/os-windows.svg" alt="" width="24" height="24" />
+          </a>
+          <a role="menuitem" data-picker-download="linux-x64">
+            <span><strong>Linux x64</strong><small>AppImage</small></span>
+            <img src="./assets/os-linux.svg" alt="" width="24" height="24" />
+          </a>
+        </div>
+      </div>
+      <a class="button" href="./docs/"
+        >Read the docs <span aria-hidden="true">↗</span></a
+      >
+    </div>
+    <p class="small" id="device-note">
+      For macOS, Windows, and Linux. Choose your build below.
+    </p>
+    <p class="small">Free and open source · MIT OR Apache-2.0</p>
+  </div>
+  <div>
+    <div
+      class="app-preview"
+      role="img"
+      aria-label="Illustrative Erkinode workspace with local and SSH tabs and a shell prompt"
+    >
+      <div class="window-top"><i></i><i></i><i></i><span>erkinode.</span></div>
+      <div class="demo-tabs">
+        <span>▸ Local · zsh</span><span class="active">▸ Production</span
+        ><span>＋</span>
+      </div>
+      <div class="demo-body">
+        <span class="comment"># Your machine. Your servers. One workspace.</span
+        ><br /><span class="prompt">dev@production ~ %</span> uname -s<span
+          class="output"
+          >Linux</span
+        ><span class="prompt">dev@production ~ %</span> pwd<span class="output"
+          >/home/dev</span
+        ><span class="prompt">dev@production ~ %</span>
+        <span class="cursor"></span>
+      </div>
+      <div class="demo-footer">
+        <span>SSH · Secure connection</span
+        ><span>Terminal &nbsp; / &nbsp; SFTP</span>
+      </div>
+    </div>
+    <p class="demo-caption">
+      A glimpse of the workspace · illustrative preview
+    </p>
+  </div>
+</section>
+<section class="principles" aria-label="Why Erkinode">
+  <div>
+    <h2>Local by default.</h2>
+    <p>
+      Your hosts and credentials stay encrypted on your device. Connections go
+      straight to your servers.
+    </p>
+  </div>
+  <div>
+    <h2>One working rhythm.</h2>
+    <p>
+      SSH, file transfers, and local shells share tabs, split panes, saved
+      commands, and terminal search.
+    </p>
+  </div>
+  <div>
+    <h2>Open from the start.</h2>
+    <p>
+      No account or subscription for local features. Read the code, build it
+      yourself, or help make it better.
+    </p>
+  </div>
+</section>
+<section class="section" id="downloads">
+  <div class="eyebrow">DESKTOP DOWNLOADS</div>
+  <h2 class="section-title">Make yourself at home.</h2>
+  <p class="section-intro">
+    Choose a build for your operating system. Erkinode is currently in beta. You
+    can use the interface in English, Russian, or Kazakh.
+  </p>
+  <p id="release-status" class="release-status" role="status">
+    Checking published releases…
+  </p>
+  <div class="download-grid">
+    <article class="download-card" data-os-card="mac">
+      <div class="download-card-heading">
+        <img src="./assets/os-apple.svg" alt="" width="28" height="28" />
+        <h3>macOS</h3>
+        <span class="os-match" hidden>YOUR OS</span>
+      </div>
+      <p>
+        Native desktop app. Choose the chip in your Mac: Apple menu → About This
+        Mac.
+      </p>
+      <span class="arch">Apple Silicon · M-series</span
+      ><a
+        class="button"
+        data-download="mac-arm64"
+        data-label="Download DMG"
+        data-github="/releases"
+        >View releases</a
+      ><a
+        class="zip"
+        data-download="mac-arm64"
+        data-format="zip"
+        data-label="ZIP archive"
+        data-github="/releases"
+        >ZIP archive</a
+      ><span class="arch">Intel · x64</span
+      ><a
+        class="button"
+        data-download="mac-x64"
+        data-label="Download DMG"
+        data-github="/releases"
+        >View releases</a
+      ><a
+        class="zip"
+        data-download="mac-x64"
+        data-format="zip"
+        data-label="ZIP archive"
+        data-github="/releases"
+        >ZIP archive</a
+      >
+    </article>
+    <article class="download-card" data-os-card="win">
+      <div class="download-card-heading">
+        <img src="./assets/os-windows.svg" alt="" width="28" height="28" />
+        <h3>Windows</h3>
+        <span class="os-match" hidden>YOUR OS</span>
+      </div>
+      <p>
+        x64 installer for Windows 10 / 11. Uses PowerShell for local terminals.
+      </p>
+      <a
+        class="button"
+        data-download="win-x64"
+        data-label="Download installer"
+        data-github="/releases"
+        >View releases</a
+      >
+      <p class="small card-note">
+        A native Windows ARM64 build is not currently provided.
+      </p>
+    </article>
+    <article class="download-card" data-os-card="linux">
+      <div class="download-card-heading">
+        <img src="./assets/os-linux.svg" alt="" width="28" height="28" />
+        <h3>Linux</h3>
+        <span class="os-match" hidden>YOUR OS</span>
+      </div>
+      <p>
+        x64 AppImage for desktop Linux. Requires a working GNOME Keyring or
+        KWallet for credential storage.
+      </p>
+      <a
+        class="button"
+        data-download="linux-x64"
+        data-label="Download AppImage"
+        data-github="/releases"
+        >View releases</a
+      >
+      <p class="small card-note">
+        ARM64 and 32-bit Linux builds are not currently provided.
+      </p>
+    </article>
+  </div>
+  <div class="notes">
+    <a data-github="/releases">All releases & release notes ↗</a
+    ><a id="checksums" hidden>Download SHA-256 file ↓</a
+    ><a href="./docs/installation/">Installation help ↗</a>
+  </div>
+  <details class="checksum-panel" id="checksum-panel" hidden>
+    <summary>
+      <span>See SHA-256 hashes</span><span class="checksum-kind">SHA-256</span>
+    </summary>
+    <div class="checksum-intro">
+      <p>
+        Compare a hash with the result calculated on your downloaded file.
+        <a href="./docs/installation/#verify-a-download">How to verify</a>
+      </p>
+      <button class="copy-button" id="copy-all-hashes" type="button">
+        Copy all
+      </button>
+    </div>
+    <div class="checksum-list" id="checksum-values"></div>
+  </details>
+  <p class="small">
+    Beta installers are not yet code signed or notarized. macOS arm64 is tested
+    locally; Windows, Linux, and Intel Mac desktop validation is still in
+    progress. <a href="./docs/platforms/">Platform details</a>
+  </p>
+  <noscript
+    ><p>
+      JavaScript is off. Use <a data-github="/releases">GitHub Releases</a> to
+      choose a download manually. Documentation works without JavaScript.
+    </p></noscript
+  >
+</section>
+<section class="docs-callout">
+  <div>
+    <h2>A little guidance goes a long way.</h2>
+    <p>
+      Start with your first connection, learn SSH keys and jump hosts, or
+      explore how Erkinode stores credentials and runs local terminals.
+    </p>
+  </div>
+  <a class="button" href="./docs/">Explore the documentation ↗</a>
+</section>

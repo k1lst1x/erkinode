@@ -1,0 +1,109 @@
+{
+  "name": "erkinode",
+  "version": "0.1.0-beta.1",
+  "description": "Free and open-source SSH and SFTP workspace. Your servers. Your freedom.",
+  "private": true,
+  "type": "module",
+  "main": "electron/main.js",
+  "author": "Erkinode contributors",
+  "license": "(MIT OR Apache-2.0)",
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "dev": "node scripts/prepare-pty.mjs && node scripts/dev.mjs",
+    "start": "node scripts/prepare-pty.mjs && electron .",
+    "build": "tsc --noEmit && vite build",
+    "test": "node scripts/prepare-pty.mjs && node --test tests/*.test.js",
+    "check": "node scripts/prepare-pty.mjs && tsc --noEmit && vite build && node --test tests/*.test.js",
+    "pack": "node scripts/prepare-pty.mjs && tsc --noEmit && vite build && electron-builder --dir",
+    "dist": "node scripts/prepare-pty.mjs && tsc --noEmit && vite build && electron-builder --publish never",
+    "test:ui": "node scripts/prepare-pty.mjs && node scripts/ui-test.mjs && node scripts/local-terminal-ui.mjs",
+    "locales:check": "node scripts/check-locales.mjs",
+    "icons:update": "node scripts/update-os-icons.mjs",
+    "native:setup": "node scripts/prepare-pty.mjs",
+    "test:local-ui": "node scripts/prepare-pty.mjs && node scripts/local-terminal-ui.mjs",
+    "site:build": "node scripts/build-site.mjs",
+    "site:preview": "node scripts/serve-site.mjs",
+    "site:check": "node scripts/check-site.mjs",
+    "site:test": "node scripts/test-site.mjs"
+  },
+  "dependencies": {
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/addon-search": "^0.16.0",
+    "@xterm/xterm": "^6.0.0",
+    "i18next": "^26.5.10",
+    "lucide-react": "^0.468.0",
+    "node-pty": "^1.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-i18next": "^17.1.8",
+    "ssh2": "^1.17.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "electron": "45.0.0",
+    "electron-builder": "^26.0.0",
+    "marked": "^18.1.1",
+    "node-gyp": "^13.1.0",
+    "playwright": "^1.56.0",
+    "prettier": "^3.6.2",
+    "sharp": "^0.35.5",
+    "simple-icons": "^16.35.0",
+    "typescript": "^5.9.0",
+    "vite": "^7.2.0"
+  },
+  "build": {
+    "npmRebuild": false,
+    "appId": "io.github.k1lst1x.erkinode",
+    "productName": "Erkinode",
+    "directories": {
+      "output": "release/${version}"
+    },
+    "files": [
+      "dist/**",
+      "electron/**",
+      "package.json",
+      "LICENSE",
+      "LICENSE-MIT",
+      "LICENSE-APACHE",
+      "locales/**",
+      "shared/**",
+      "THIRD_PARTY_NOTICES.md",
+      "src/assets/os/LICENSE-CC0.txt"
+    ],
+    "asar": true,
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "hardenedRuntime": true,
+      "icon": "build/icon.icns",
+      "artifactName": "${productName}-${version}-macOS-${arch}.${ext}"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.png",
+      "artifactName": "${productName}-${version}-Windows-${arch}-Setup.${ext}"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Development",
+      "icon": "build/icon.png",
+      "artifactName": "${productName}-${version}-Linux-x64.${ext}"
+    },
+    "buildVersion": "1",
+    "asarUnpack": [
+      "node_modules/node-pty/**"
+    ]
+  }
+}

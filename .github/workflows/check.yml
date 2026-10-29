@@ -1,0 +1,36 @@
+name: Check
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: pnpm/action-setup@7088e561eb65bb68695d245aa206f005ef30921d # v4.1.0
+        with:
+          version: 11.25.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm native:setup
+      - run: pnpm check
+      - run: pnpm site:build
+      - run: pnpm site:check
+      - run: node node_modules/electron/install.js
+        if: runner.os == 'macOS'
+      - run: pnpm test:ui
+        if: runner.os == 'macOS'
+      - run: pnpm site:test
+        if: runner.os == 'macOS'
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: failure() && runner.os == 'macOS'
+        with:
+          name: ui-diagnostics
+          path: test-results/

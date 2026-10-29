@@ -1,0 +1,3 @@
+# Native setup is explicit: pnpm native:setup works with --ignore-scripts too.
+allowBuilds:
+  node-pty: false
