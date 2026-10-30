@@ -517,7 +517,7 @@ nav a[aria-current] {
 }
 .checksum-row {
   display: grid;
-  grid-template-columns: minmax(190px, 0.8fr) minmax(520px, 2fr) 60px;
+  grid-template-columns: minmax(190px, 0.8fr) minmax(520px, 2fr) 84px;
   align-items: center;
   min-width: 850px;
   border-bottom: 1px solid var(--line);
@@ -548,6 +548,7 @@ nav a[aria-current] {
   align-self: stretch;
   border-width: 0 0 0 1px;
   font-size: 10px;
+  text-align: center;
 }
 .copy-button:hover,
 .hash-copy:hover,
