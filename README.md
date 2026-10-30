@@ -8,7 +8,7 @@ A free, open-source SSH and SFTP desktop workspace, licensed under **MIT OR Apac
 
 Save your hosts, open SSH terminals, and manage remote files from one local application. An independent implementation inspired by common SSH workflows; no Termius code or branding is included.
 
-**Status: 0.1.0-beta.1 desktop beta. Full Termius feature parity is not claimed.**
+**Status: 0.1.0-beta.2 desktop beta. Full Termius feature parity is not claimed.**
 
 ## Run on this Mac
 

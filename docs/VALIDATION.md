@@ -1,6 +1,6 @@
 # Erkinode validation
 
-Current release target: **0.1.0-beta.1**.
+Current release target: **0.1.0-beta.2**.
 
 Local validation environment: macOS arm64, Node.js 24, Electron 45. The application remains beta, and results from one machine do not establish support for every advertised platform.
 

@@ -28,4 +28,4 @@ Local terminals use node-pty: native PTYs on macOS/Linux and ConPTY on Windows 1
 
 ## Seeing local changes
 
-`pnpm build` updates `dist/` only. `pnpm start` reads the existing build. `pnpm dev` builds once and launches the source app. `pnpm run pack` rebuilds the packaged application. Quit any running copy before opening a refreshed package. The current version is 0.1.0-beta.1, and the UI reads that exact value from package metadata.
+`pnpm build` updates `dist/` only. `pnpm start` reads the existing build. `pnpm dev` builds once and launches the source app. `pnpm run pack` rebuilds the packaged application. Quit any running copy before opening a refreshed package. The current version is 0.1.0-beta.2, and the UI reads that exact value from package metadata.

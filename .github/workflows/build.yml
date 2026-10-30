@@ -44,6 +44,17 @@ jobs:
       - run: pnpm native:setup
       - run: pnpm check
       - run: pnpm exec electron-builder --${{ matrix.platform }} --${{ matrix.arch }} --publish never
+      - name: Verify macOS application signature
+        if: matrix.platform == 'mac'
+        shell: bash
+        run: |
+          release_dir="release/$(node -p "require('./package.json').version")"
+          app="$(find "$release_dir" -maxdepth 2 -type d -name Erkinode.app -print -quit)"
+          test -n "$app"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          codesign --display --entitlements :- "$app" > /tmp/erkinode-entitlements.plist
+          /usr/libexec/PlistBuddy -c 'Print :com.apple.security.cs.allow-jit' /tmp/erkinode-entitlements.plist | grep -qx true
+          /usr/libexec/PlistBuddy -c 'Print :com.apple.security.cs.disable-library-validation' /tmp/erkinode-entitlements.plist | grep -qx true
       - run: node scripts/stage-installers.mjs ${{ matrix.platform }} ${{ matrix.arch }}
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:

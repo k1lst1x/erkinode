@@ -33,3 +33,24 @@ test("release publication requires main ancestry and a protected environment", (
   assert.match(source, /refs\/remotes\/origin\/main/);
   assert.match(source, /environment:\s*\n\s+name: release/);
 });
+
+test("macOS releases are ad-hoc signed and verified before staging", () => {
+  const manifest = JSON.parse(
+    fs.readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+  );
+  const source = fs.readFileSync(
+    new URL("build.yml", workflowDirectory),
+    "utf8",
+  );
+
+  assert.equal(manifest.build.mac.identity, "-");
+  assert.equal(manifest.build.mac.hardenedRuntime, true);
+  assert.match(source, /codesign --verify --deep --strict/);
+  assert.match(source, /com\.apple\.security\.cs\.allow-jit/);
+  assert.match(source, /com\.apple\.security\.cs\.disable-library-validation/);
+  assert.ok(
+    source.indexOf("codesign --verify") <
+      source.indexOf("scripts/stage-installers.mjs"),
+    "macOS signature verification must run before artifacts are staged",
+  );
+});

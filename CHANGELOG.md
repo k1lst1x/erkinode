@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0-beta.2 — 2026-10-30
+
+### Packaging
+
+- Ad-hoc sign the complete macOS application bundle so unsigned beta builds retain valid code integrity on both Apple Silicon and Intel Macs.
+- Verify the macOS bundle and its required Electron entitlements during CI before release artifacts are staged.
+
 ## 0.1.0-beta.1 — 2026-10-28
 
 Initial beta release of Erkinode — a free, open-source SSH, SFTP, and local terminal desktop workspace.

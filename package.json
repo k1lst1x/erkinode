@@ -1,6 +1,6 @@
 {
   "name": "erkinode",
-  "version": "0.1.0-beta.1",
+  "version": "0.1.0-beta.2",
   "description": "Free and open-source SSH and SFTP workspace. Your servers. Your freedom.",
   "private": true,
   "type": "module",
@@ -78,6 +78,7 @@
     "asar": true,
     "mac": {
       "category": "public.app-category.developer-tools",
+      "identity": "-",
       "target": [
         "dmg",
         "zip"
@@ -101,7 +102,7 @@
       "icon": "build/icon.png",
       "artifactName": "${productName}-${version}-Linux-x64.${ext}"
     },
-    "buildVersion": "1",
+    "buildVersion": "2",
     "asarUnpack": [
       "node_modules/node-pty/**"
     ]
