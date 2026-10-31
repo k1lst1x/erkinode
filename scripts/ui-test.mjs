@@ -145,9 +145,41 @@ try {
   }));
   assert.equal(security.require, "undefined");
   assert.equal(security.process, "undefined");
+  await page.locator(".terminal-view").click({ button: "right" });
+  await page.getByRole("menu").waitFor();
+  for (const action of [
+    "Copy",
+    "Paste",
+    "Search",
+    "Insert snippet",
+    "Clear terminal",
+    "Open SFTP",
+    "Disconnect",
+  ])
+    await page
+      .getByRole("menu")
+      .getByRole("button", { name: new RegExp(`^${action}`) })
+      .waitFor();
+  await page.locator(".session-toolbar").click();
+  await page.getByRole("menu").waitFor({ state: "detached" });
   await page.locator(".xterm-helper-textarea").focus();
   await page.keyboard.type("hello-erkinode");
   await page.screenshot({ path: "test-results/03-terminal.png" });
+  await page.keyboard.press("Enter");
+  await page.keyboard.type("[sudo] password for tester: ");
+  await page
+    .getByText("sudo is requesting a password", { exact: true })
+    .waitFor();
+  await page
+    .getByRole("button", { name: "Use SSH password", exact: true })
+    .waitFor();
+  await page.screenshot({ path: "test-results/03-sudo-password.png" });
+  await page
+    .getByRole("button", { name: "Use SSH password", exact: true })
+    .click();
+  await page
+    .getByText("sudo is requesting a password", { exact: true })
+    .waitFor({ state: "detached" });
   await page.waitForFunction(async () =>
     (await window.erkinode.invoke("state")).hosts.some(
       (host) => host.system?.id === "ubuntu",
@@ -385,6 +417,20 @@ try {
   await page.locator(".auth-overlay").waitFor({ state: "hidden" });
   await page.getByText("Secure connection", { exact: false }).waitFor();
   assert.equal(await page.locator(".session-tab").count(), 1);
+  await page.getByRole("button", { name: "Settings", exact: false }).click();
+  await page.getByRole("button", { name: "Enable", exact: true }).click();
+  await page.getByLabel("New PIN", { exact: true }).fill("123456");
+  await page.getByLabel("Confirm PIN", { exact: true }).fill("123456");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await page.getByRole("button", { name: "Lock now", exact: true }).click();
+  await page.getByRole("heading", { name: "Unlock Erkinode" }).waitFor();
+  await page.getByLabel("PIN", { exact: true }).fill("123456");
+  await page.getByRole("button", { name: "Unlock", exact: true }).click();
+  await page.getByRole("button", { name: "Settings", exact: false }).click();
+  await page.getByRole("button", { name: "Disable", exact: true }).click();
+  await page.getByLabel("Current PIN", { exact: true }).fill("123456");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await page.getByRole("button", { name: "Enable", exact: true }).waitFor();
   assert.deepEqual(errors, []);
   console.log(
     "UI PASS: host form → encrypted save → SSH → SFTP → editor → local pane → upload/download bytes → snippets; live language switching, persistence, native dialogs, menus, and errors; renderer isolated; no page errors.",

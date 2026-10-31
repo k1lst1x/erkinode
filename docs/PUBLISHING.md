@@ -24,10 +24,10 @@ Four native runners produce:
 | ----------- | -------------- | ----------- |
 | macOS arm64 | macos-15       | DMG and ZIP |
 | macOS x64   | macos-15-intel | DMG and ZIP |
-| Windows x64 | windows-latest | Setup.exe   |
+| Windows x64 | windows-latest | Setup.exe and portable .exe |
 | Linux x64   | ubuntu-24.04   | AppImage    |
 
-Each job checks native PTY readiness, runs source checks/tests, and packages without automatic electron-builder publication. A separate job validates all six expected files, writes SHA-256 checksums, creates GitHub build-provenance attestations for the installers and checksum manifest, creates or resumes a draft release, uploads the complete asset set, then publishes it. A failed matrix job prevents publication. Existing published releases are not overwritten: increment the version for a replacement. Every external GitHub Action is pinned to an immutable full commit SHA; the adjacent version comment records the reviewed upstream release.
+Each job checks native PTY readiness, runs source checks/tests, and packages without automatic electron-builder publication. A separate job validates all seven expected files, writes SHA-256 checksums, creates GitHub build-provenance attestations for the installers and checksum manifest, creates or resumes a draft release, uploads the complete asset set, then publishes it. A failed matrix job prevents publication. Existing published releases are not overwritten: increment the version for a replacement. Every external GitHub Action is pinned to an immutable full commit SHA; the adjacent version comment records the reviewed upstream release.
 
 ### Free release verification
 

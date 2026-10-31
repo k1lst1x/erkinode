@@ -53,4 +53,6 @@ Remote editing compares revision digests and uses the OpenSSH POSIX rename exten
 
 Transfer no-replace behavior relies on compliant SFTP semantics; arbitrary malicious servers cannot be made transactional by the client.
 
-Portable vault v1 has no migration engine. Format changes require an explicit version, old-format read tests, atomic migration, and a backup. Do not implement cloud sync by copying an OS-encrypted blob between devices.
+Portable backups separate the stable format family from `formatVersion`, authenticate their metadata with AES-GCM additional data, and run decrypted vault data through an ordered migration boundary before strict validation and atomic persistence. Historical `harbor-backup-v1` and `erkinode-backup-v1` envelopes remain readable and are covered by encrypted fixtures. A failed import never replaces the current vault. Future format changes must add a migration and a fixture instead of renaming or removing an existing reader. Do not implement cloud sync by copying an OS-encrypted blob between devices.
+
+Interactive `sudo` support recognizes the standard `[sudo] …:` terminal prompt. It never rewrites commands or uses `sudo -S`, and it never sends a credential automatically. A short-lived main-process capability permits one explicit send of the SSH password already held for that session; the renderer receives only availability events and never the secret. Manual entry remains available because a server's sudo password may differ from its SSH password.

@@ -74,7 +74,11 @@ export type AppState = {
   hosts: Host[];
   snippets: Snippet[];
   knownHosts: Record<string, string>;
-  settings: { fontSize: number; language: "en" | "ru" | "kk" };
+  settings: {
+    fontSize: number;
+    language: "en" | "ru" | "kk";
+    pinLock: { enabled: boolean; idleMinutes: number };
+  };
   sessions: Session[];
   version: string;
   platform: string;

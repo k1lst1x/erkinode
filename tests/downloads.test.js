@@ -80,7 +80,8 @@ test("release metadata rejects mismatched tags and complete artifact sets get ch
   );
   try {
     const names = expectedReleaseFiles("1.2.0-beta.1");
-    assert.equal(names.length, 6);
+    assert.equal(names.length, 7);
+    assert(names.some((name) => name.endsWith("Windows-x64-Portable.exe")));
     await assert.rejects(prepareRelease(directory, "1.2.0-beta.1"));
     for (const name of names)
       await fs.writeFile(path.join(directory, name), name);
@@ -89,7 +90,7 @@ test("release metadata rejects mismatched tags and complete artifact sets get ch
       path.join(directory, "SHA256SUMS.txt"),
       "utf8",
     );
-    assert.equal(sums.trim().split("\n").length, 6);
+    assert.equal(sums.trim().split("\n").length, 7);
     assert.match(sums, /^[a-f0-9]{64}  Erkinode-/);
     await fs.writeFile(path.join(directory, "unexpected.exe"), "unexpected");
     await assert.rejects(

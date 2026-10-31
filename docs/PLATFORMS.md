@@ -6,10 +6,10 @@ The application shares its Electron/React/SSH2 code across operating systems. A 
 | ----------- | ----------------- | ------------------------------------------------ |
 | macOS arm64 | `.app`, DMG, ZIP  | Build and desktop checks performed locally       |
 | macOS x64   | `.app`, DMG, ZIP  | Configured; not tested on an Intel Mac here      |
-| Windows     | NSIS `.exe`       | Configured; not tested on a Windows desktop here |
+| Windows     | NSIS and portable `.exe` | Configured; not tested on a Windows desktop here |
 | Linux       | AppImage          | Configured; not tested on a Linux desktop here   |
 
-The **Build desktop artifacts** workflow uses explicit native runners for macOS arm64/x64, Windows x64, and Linux x64. **Publish desktop release** reuses that build matrix, validates all six output files, and publishes them with checksums. See [publishing](PUBLISHING.md). Checks also use an OS matrix. These definitions are prepared locally; they are not evidence of completed remote CI runs. Runner architectures and target architectures are explicitly matched; separate desktop validation is still required for each.
+The **Build desktop artifacts** workflow uses explicit native runners for macOS arm64/x64, Windows x64, and Linux x64. **Publish desktop release** reuses that build matrix, validates all seven output files, and publishes them with checksums. See [publishing](PUBLISHING.md). Checks also use an OS matrix. These definitions are prepared locally; they are not evidence of completed remote CI runs. Runner architectures and target architectures are explicitly matched; separate desktop validation is still required for each.
 
 Run `pnpm run dist` on the target OS. Public signing/notarization is not configured. macOS signing requires macOS. Cross-building has toolchain constraints; native runners keep the first release pipeline simpler. [electron-builder](https://www.electron.build/v26/docs/features/multi-platform-build/).
 
@@ -28,4 +28,4 @@ Local terminals use node-pty: native PTYs on macOS/Linux and ConPTY on Windows 1
 
 ## Seeing local changes
 
-`pnpm build` updates `dist/` only. `pnpm start` reads the existing build. `pnpm dev` builds once and launches the source app. `pnpm run pack` rebuilds the packaged application. Quit any running copy before opening a refreshed package. The current version is 0.1.0-beta.2, and the UI reads that exact value from package metadata.
+`pnpm build` updates `dist/` only. `pnpm start` reads the existing build. `pnpm dev` builds once and launches the source app. `pnpm run pack` rebuilds the packaged application. Quit any running copy before opening a refreshed package. The current version is 1.0.0, and the UI reads that exact value from package metadata.

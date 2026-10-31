@@ -7,7 +7,11 @@ import os from "node:os";
 import net from "node:net";
 import { once } from "node:events";
 import { fixture } from "./fixture.js";
-import { Connections, endpoint } from "../electron/connections.js";
+import {
+  Connections,
+  endpoint,
+  hasSudoPasswordPrompt,
+} from "../electron/connections.js";
 import { Transfers } from "../electron/transfer-manager.js";
 import { Vault } from "../electron/vault.js";
 
@@ -25,6 +29,37 @@ const wait = (check, timeout = 10000) =>
       }
     }, 10);
   });
+test("sudo prompt detection is conservative and handles terminal styling", () => {
+  assert.equal(hasSudoPasswordPrompt("[sudo] password for deploy: "), true);
+  assert.equal(
+    hasSudoPasswordPrompt("$ sudo apt update\r[sudo] password for deploy: "),
+    true,
+  );
+  assert.equal(
+    hasSudoPasswordPrompt("\u001b[1m[sudo] пароль для deploy:\u001b[0m "),
+    true,
+  );
+  assert.equal(hasSudoPasswordPrompt("Password: "), false);
+  assert.equal(hasSudoPasswordPrompt("[sudo] command failed"), false);
+});
+test("saved sudo password is sent only for a live, confirmed prompt", () => {
+  const writes = [],
+    events = [],
+    manager = new Connections({}, { emit: (event) => events.push(event) });
+  manager.sessions.set("session", {
+    id: "session",
+    closed: false,
+    status: "ready",
+    stream: { write: (value) => writes.push(value) },
+    authPassword: "saved-secret",
+    sudoPasswordOffered: true,
+    sudoPasswordOfferUntil: Date.now() + 1000,
+  });
+  manager.sendSudoPassword("session");
+  assert.deepEqual(writes, ["saved-secret\n"]);
+  assert.equal(events.at(-1).type, "sudo-password-dismissed");
+  assert.throws(() => manager.sendSudoPassword("session"), /expired/);
+});
 async function setup(t, options = {}) {
   const fixtureServer = await fixture(options.fixtureOptions),
     directory = await fs.mkdtemp(path.join(os.tmpdir(), "erkinode-client-"));
@@ -77,6 +112,12 @@ test("SSH password login, host verification, PTY, Unicode I/O, resize, and clean
   manager.resize(id, 120, 40);
   await wait(() =>
     events.find((e) => e.type === "data" && e.data.includes("Hello 日本語")),
+  );
+  manager.input(id, "\r\n[sudo] password for tester: ");
+  await wait(() => events.find((e) => e.type === "sudo-password-request"));
+  manager.sendSudoPassword(id);
+  await wait(() =>
+    events.find((e) => e.type === "data" && e.data.includes("test-password")),
   );
   manager.close(id);
   assert.equal(manager.sessions.size, 0);
@@ -411,4 +452,29 @@ test("system error guard safely maps positive POSIX codes like EINTR without Ran
   if (process.platform !== "win32") {
     assert.equal(util.getSystemErrorName(4), "EINTR");
   }
+});
+
+test("uncaughtException guard suppresses positive-errno RangeError from TCP streams", () => {
+  assert.strictEqual(process.__erkinodeUncaughtGuard, true);
+  const listeners = process.rawListeners("uncaughtException");
+  const guard = listeners.find(
+    (fn) => fn.toString().includes("ERR_OUT_OF_RANGE"),
+  );
+  assert.ok(guard, "system-errors uncaughtException guard listener is registered");
+
+  const err = new RangeError(
+    'The value of "err" is out of range. It must be a negative integer. Received 4',
+  );
+  err.code = "ERR_OUT_OF_RANGE";
+  err.stack = [
+    "RangeError [ERR_OUT_OF_RANGE]: " + err.message,
+    "    at Object.getSystemErrorName (node:util:455:11)",
+    "    at new ErrnoException (node:internal/errors:734:23)",
+    "    at TCP.onStreamRead (node:internal/stream_base_commons:221:20)",
+  ].join("\n");
+
+  assert.doesNotThrow(() => guard(err, "uncaughtException"));
+
+  const otherErr = new TypeError("something else");
+  assert.throws(() => guard(otherErr, "uncaughtException"), TypeError);
 });

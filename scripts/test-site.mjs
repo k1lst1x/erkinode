@@ -96,7 +96,8 @@ try {
   );
   assert.equal(await page.locator(".download-card.is-current").count(), 1);
   await page.getByText("See SHA-256 hashes", { exact: true }).click();
-  assert.equal(await page.locator("#checksum-values .checksum-row").count(), 6);
+  assert.equal(await page.locator("#checksum-values .checksum-row").count(), 7);
+  await page.getByRole("link", { name: /Portable version/ }).waitFor();
   assert.match(
     await page.locator("#checksums").getAttribute("href"),
     /SHA256SUMS\.txt$/,
@@ -160,9 +161,13 @@ try {
   await page.reload();
   await page
     .getByText("Not available in this release", { exact: true })
+    .first()
     .waitFor();
   assert.equal(
-    await page.locator('[data-download="win-x64"]').getAttribute("href"),
+    await page
+      .locator('[data-download="win-x64"]')
+      .first()
+      .getAttribute("href"),
     null,
   );
   response = [];

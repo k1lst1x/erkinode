@@ -1043,6 +1043,224 @@ pre {
 .terminal-search button {
   padding: 3px;
 }
+.terminal-context-menu {
+  position: fixed;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  min-width: 220px;
+  max-width: 300px;
+  padding: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(20, 26, 25, 0.94);
+  box-shadow: 0 16px 42px -4px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px) saturate(180%);
+  user-select: none;
+  animation: contextMenuFadeIn 0.1s ease-out;
+}
+
+@keyframes contextMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.terminal-menu-group {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.terminal-context-menu button,
+.terminal-menu-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #dce5e2;
+  font-size: 12.5px;
+  font-weight: 450;
+  line-height: 1;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.terminal-context-menu button:hover:not(:disabled),
+.terminal-menu-item:hover:not(:disabled) {
+  background: rgba(161, 232, 206, 0.12);
+  color: #ffffff;
+}
+
+.terminal-context-menu button:active:not(:disabled),
+.terminal-menu-item:active:not(:disabled) {
+  background: rgba(161, 232, 206, 0.2);
+}
+
+.terminal-context-menu button:disabled,
+.terminal-menu-item:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.terminal-menu-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-right: 9px;
+  color: #8fa39c;
+  flex-shrink: 0;
+}
+
+.terminal-menu-item:hover:not(:disabled) .terminal-menu-icon {
+  color: #a1e8ce;
+}
+
+.terminal-menu-label {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.terminal-menu-shortcut {
+  margin-left: auto;
+  padding-left: 16px;
+  font-size: 11px;
+  font-weight: 400;
+  color: #6c7d77;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  letter-spacing: 0.5px;
+}
+
+.terminal-menu-item:hover:not(:disabled) .terminal-menu-shortcut {
+  color: #9ab3ab;
+}
+
+.terminal-menu-arrow {
+  margin-left: auto;
+  padding-left: 12px;
+  font-size: 14px;
+  color: #6c7d77;
+}
+
+.terminal-menu-divider {
+  height: 1px;
+  width: calc(100% - 8px);
+  margin: 4px 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 0;
+}
+
+.terminal-context-menu hr {
+  width: calc(100% - 8px);
+  margin: 4px 4px;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.terminal-context-menu button.danger,
+.terminal-menu-item.danger {
+  color: #f78166;
+}
+
+.terminal-context-menu button.danger .terminal-menu-icon,
+.terminal-menu-item.danger .terminal-menu-icon {
+  color: #f78166;
+}
+
+.terminal-context-menu button.danger:hover:not(:disabled),
+.terminal-menu-item.danger:hover:not(:disabled) {
+  background: rgba(248, 81, 73, 0.15);
+  color: #ff9b88;
+}
+
+.terminal-context-menu button.danger:hover:not(:disabled) .terminal-menu-icon,
+.terminal-menu-item.danger:hover:not(:disabled) .terminal-menu-icon {
+  color: #ff9b88;
+}
+
+.terminal-menu-empty {
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.terminal-context-menu > span {
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+.terminal-action-notice {
+  position: absolute;
+  z-index: 6;
+  bottom: 18px;
+  left: 50%;
+  padding: 7px 11px;
+  border: 1px solid #496157;
+  border-radius: 999px;
+  background: #25352f;
+  box-shadow: 0 8px 24px #0007;
+  transform: translateX(-50%);
+  font-size: 11px;
+}
+
+.sudo-password-offer {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  left: 18px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 12px 14px;
+  border: 1px solid #40534d;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel) 96%, transparent);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 24%);
+  backdrop-filter: blur(14px);
+}
+
+.sudo-password-offer > div {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sudo-password-offer small {
+  color: var(--muted);
+}
+
+@media (max-width: 720px) {
+  .sudo-password-offer {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .sudo-password-offer > div {
+    flex-basis: calc(100% - 32px);
+  }
+}
 .workspace-footer {
   height: 32px;
   min-height: 32px;
@@ -1711,6 +1929,85 @@ td > svg {
   flex-shrink: 0;
   padding-left: 16px;
   font-size: 11px;
+}
+.settings-actions {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto !important;
+  margin-left: auto;
+}
+.pin-digits-selector {
+  display: inline-flex;
+  gap: 4px;
+  background: #111a15;
+  border: 1px solid #283d30;
+  border-radius: 8px;
+  padding: 3px;
+  margin-bottom: 14px;
+}
+.pin-digits-selector button {
+  background: transparent;
+  border: none;
+  color: #8da496;
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.pin-digits-selector button:hover {
+  color: #cad9ce;
+}
+.pin-digits-selector button.active {
+  background: #253a2d;
+  color: #a1e8ce;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+.lock-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background:
+    radial-gradient(circle at 50% 35%, #1b3028 0, transparent 42%), #101715;
+}
+.lock-card {
+  width: min(420px, 100%);
+  display: grid;
+  gap: 15px;
+  padding: 38px;
+  border: 1px solid #354a42;
+  border-radius: 18px;
+  background: #151e1b;
+  box-shadow: 0 24px 80px #0008;
+  text-align: center;
+}
+.lock-card > svg {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 8px;
+}
+.lock-card h1,
+.lock-card p {
+  margin: 0;
+}
+.lock-card p {
+  color: var(--muted);
+}
+.lock-card form {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+.lock-card input {
+  font: 600 25px/1 var(--mono);
+  letter-spacing: 0.42em;
+  text-align: center;
+}
+.lock-card button {
+  justify-content: center;
+  padding: 12px;
 }
 .known-host code {
   display: block;

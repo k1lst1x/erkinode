@@ -11,6 +11,7 @@ export function expectedReleaseFiles(version) {
     "macOS-x64.dmg",
     "macOS-x64.zip",
     "Windows-x64-Setup.exe",
+    "Windows-x64-Portable.exe",
     "Linux-x64.AppImage",
   ].map((suffix) => `Erkinode-${version}-${suffix}`);
 }
@@ -41,7 +42,7 @@ export async function prepareRelease(directory, version) {
   );
   await fs.writeFile(
     path.join(directory, "release-notes.md"),
-    `# Erkinode ${version}\n\nSSH, SFTP, and local terminals in one free, open-source desktop app.\n\n## Downloads\n\n- macOS: choose Apple Silicon (arm64) or Intel (x64), in DMG or ZIP format.\n- Windows: x64 Setup.exe.\n- Linux: x64 AppImage.\n\n## Verify the download\n\nSHA256SUMS.txt contains the SHA-256 checksum for every installer. GitHub build-provenance attestations link every installer and the checksum manifest to this repository, workflow, and commit. Verify an installer with \`gh attestation verify FILE --repo ${process.env.GITHUB_REPOSITORY || "k1lst1x/erkinode"}\`.\n\n## Beta status\n\nInstallers are not yet signed with platform-trusted developer identities or notarized. GitHub attestations prove release origin but do not replace Authenticode, Apple Developer ID, SmartScreen, or Gatekeeper. macOS arm64 is tested locally; other desktop targets require further validation. Build/test success does not establish complete GUI compatibility on every target. Automatic in-app updates, cloud sync, and mobile applications are not implemented.\n\nSee the repository README and documentation for installation, known limitations, and source-build instructions. Source and original branding are licensed MIT OR Apache-2.0.\n`,
+    `# Erkinode ${version}\n\nSSH, SFTP, and local terminals in one free, open-source desktop app.\n\n## Downloads\n\n- macOS: choose Apple Silicon (arm64) or Intel (x64), in DMG or ZIP format.\n- Windows: x64 Setup.exe or a portable executable that needs no installation.\n- Linux: x64 AppImage.\n\n## Verify the download\n\nSHA256SUMS.txt contains the SHA-256 checksum for every installer. GitHub build-provenance attestations link every installer and the checksum manifest to this repository, workflow, and commit. Verify an installer with \`gh attestation verify FILE --repo ${process.env.GITHUB_REPOSITORY || "k1lst1x/erkinode"}\`.\n\n## Beta status\n\nInstallers are not yet signed with platform-trusted developer identities or notarized. GitHub attestations prove release origin but do not replace Authenticode, Apple Developer ID, SmartScreen, or Gatekeeper. macOS arm64 is tested locally; other desktop targets require further validation. Build/test success does not establish complete GUI compatibility on every target. Automatic in-app updates, cloud sync, and mobile applications are not implemented.\n\nSee the repository README and documentation for installation, known limitations, and source-build instructions. Source and original branding are licensed MIT OR Apache-2.0.\n`,
   );
   return names;
 }

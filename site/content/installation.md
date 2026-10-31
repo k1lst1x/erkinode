@@ -19,6 +19,8 @@ After attempting to open a trusted download once, macOS provides its per-app ove
 
 Download the **Windows x64 Setup.exe** file and run the installer. Beta installers are not yet code signed, so SmartScreen may show an unrecognized-publisher notice. Verify the project and release source before continuing.
 
+The **Windows x64 Portable.exe** build runs without installation or administrator access. It still keeps encrypted credentials in the current Windows user profile rather than beside the executable. Updates are manual.
+
 For a verified download, SmartScreen's **More info** view offers **Run anyway**. Do not disable SmartScreen system-wide. If the filename, checksum, or source differs from the official GitHub release, do not run the installer.
 
 The local terminal uses PowerShell 7 in its conventional installation location when available, otherwise Windows PowerShell. The current release pipeline does not provide a native Windows ARM64 installer.

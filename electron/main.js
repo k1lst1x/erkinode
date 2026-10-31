@@ -1,4 +1,5 @@
-import "./system-errors.js";
+import { installUncaughtGuard } from "./system-errors.js";
+installUncaughtGuard();
 import { t, setLanguage, i18n } from "./i18n.js";
 import {
   app,
@@ -10,10 +11,14 @@ import {
   net,
   Menu,
   shell,
+  clipboard,
+  powerMonitor,
 } from "electron";
 import fs from "node:fs/promises";
+import fsSync from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   randomUUID,
@@ -55,7 +60,11 @@ let win,
   vault,
   connections,
   transfers,
-  quitting = false;
+  quitting = false,
+  locked = false,
+  pinFailures = 0,
+  pinRetryAt = 0,
+  idleTimer;
 const prompts = new Map();
 const localFiles = new LocalFiles();
 const emit = (event) => {
@@ -69,6 +78,15 @@ const localTerminals = new LocalTerminals({
 });
 const terminalOwner = (id) =>
   localTerminals.sessions.has(id) ? localTerminals : connections;
+const lockApp = () => {
+  if (!vault?.pinEnabled() || locked) return false;
+  locked = true;
+  transfers?.cancelAll();
+  connections?.closeAll();
+  localTerminals.closeAll();
+  emit({ type: "lock-state", locked: true });
+  return true;
+};
 const request = (title, fields, description = "") =>
   new Promise((resolve) => {
     const id = randomUUID();
@@ -136,6 +154,101 @@ async function protector() {
   };
 }
 const handlers = {
+  "lock:status": () => ({
+    enabled: vault.pinEnabled(),
+    locked,
+    retryAfter: Math.max(0, Math.ceil((pinRetryAt - Date.now()) / 1000)),
+    idleMinutes: vault.snapshot().settings.pinLock.idleMinutes,
+    digits: vault.pinDigits(),
+  }),
+  "lock:unlock": (pin) => {
+    const wait = pinRetryAt - Date.now();
+    if (wait > 0)
+      throw new Error(
+        t("Try again in {{seconds}} seconds", {
+          seconds: Math.ceil(wait / 1000),
+        }),
+      );
+    if (!vault.verifyPin(pin)) {
+      pinFailures += 1;
+      if (pinFailures >= 5)
+        pinRetryAt =
+          Date.now() + Math.min(300, 30 * 2 ** (pinFailures - 5)) * 1000;
+      throw new Error(t("Incorrect PIN"));
+    }
+    pinFailures = 0;
+    pinRetryAt = 0;
+    locked = false;
+    emit({ type: "lock-state", locked: false });
+    return true;
+  },
+  "lock:setup": async ({ pin, idleMinutes }) => {
+    await vault.setPin(pin, idleMinutes);
+    locked = false;
+    updateApplicationMenu();
+    return vault.snapshot().settings.pinLock;
+  },
+  "lock:disable": async (pin) => {
+    if (!vault.verifyPin(pin)) throw new Error(t("Incorrect PIN"));
+    await vault.disablePin();
+    locked = false;
+    updateApplicationMenu();
+    return true;
+  },
+  "lock:idle": async ({ pin, idleMinutes }) => {
+    if (!vault.verifyPin(pin)) throw new Error(t("Incorrect PIN"));
+    await vault.setPinIdleMinutes(idleMinutes);
+    return vault.snapshot().settings.pinLock;
+  },
+  "lock:now": () => lockApp(),
+  "clipboard:write-text": (text) => {
+    if (typeof text !== "string" || text.length > 2_000_000)
+      throw new Error(t("Invalid clipboard text"));
+    clipboard.writeText(text);
+    return true;
+  },
+  "clipboard:read-text": () => {
+    let text = "";
+    const log = [`--- clipboard:read-text at ${new Date().toISOString()}`];
+    try {
+      text = clipboard.readText();
+      log.push(`clipboard.readText() -> len: ${text ? text.length : 0}, val: ${JSON.stringify(text.slice(0, 50))}`);
+    } catch (e) {
+      log.push(`clipboard.readText() ERROR: ${e.message}`);
+    }
+    try {
+      const formats = clipboard.availableFormats();
+      log.push(`availableFormats: ${JSON.stringify(formats)}`);
+    } catch (e) {
+      log.push(`availableFormats ERROR: ${e.message}`);
+    }
+    if (!text && process.platform === "darwin") {
+      try {
+        text = execFileSync("/usr/bin/pbpaste", {
+          encoding: "utf8",
+          maxBuffer: 4 * 1024 * 1024,
+          timeout: 1000,
+        });
+        log.push(`pbpaste -> len: ${text ? text.length : 0}, val: ${JSON.stringify(text.slice(0, 50))}`);
+      } catch (e) {
+        log.push(`pbpaste ERROR: ${e.message}`);
+      }
+    }
+    if (typeof text !== "string") text = "";
+    if (text.length > 2_000_000)
+      throw new Error(t("Clipboard text is too large"));
+    try {
+      fsSync.appendFileSync("/tmp/erkinode-clipboard.log", log.join("\n") + "\n");
+    } catch {}
+    return text;
+  },
+  "clipboard:paste-native": () => {
+    if (win && !win.isDestroyed()) {
+      win.webContents.paste();
+      return true;
+    }
+    return false;
+  },
   state: () => ({
     ...vault.snapshot(),
     sessions: [...connections.list(), ...localTerminals.list()],
@@ -209,6 +322,8 @@ const handlers = {
     terminalOwner(id).close(id);
   },
   "session:input": ({ id, data }) => terminalOwner(id).input(id, data),
+  "session:sudo-password": (id) => connections.sendSudoPassword(id),
+  "session:sudo-password-dismiss": (id) => connections.dismissSudoPassword(id),
   "session:resize": ({ id, cols, rows }) =>
     terminalOwner(id).resize(id, cols, rows),
   "sftp:list": ({ id, path: dir }) => connections.listFiles(id, dir),
@@ -548,6 +663,14 @@ function updateApplicationMenu() {
           accelerator: process.platform === "darwin" ? "Cmd+W" : "Ctrl+Shift+W",
           click: () => emit({ type: "close-active-tab" }),
         },
+        { type: "separator" },
+        {
+          label: t("Lock Erkinode"),
+          accelerator:
+            process.platform === "darwin" ? "Cmd+Shift+L" : "Ctrl+Shift+L",
+          enabled: vault?.pinEnabled() === true,
+          click: () => lockApp(),
+        },
       ],
     },
     {
@@ -605,6 +728,7 @@ else {
       vault = new Vault(
         path.join(app.getPath("userData"), "vault.json"),
         await protector(),
+        { appVersion: app.getVersion() },
       );
       try {
         await vault.load();
@@ -662,6 +786,8 @@ else {
           authorized(event);
           if (typeof method !== "string" || !Object.hasOwn(handlers, method))
             throw new Error(t("Unknown command"));
+          if (locked && !["lock:status", "lock:unlock"].includes(method))
+            throw new Error(t("Erkinode is locked"));
           return { ok: true, value: await handlers[method](args) };
         } catch (e) {
           return {
@@ -693,6 +819,18 @@ else {
         } catch {}
       });
       updateApplicationMenu();
+      locked = vault.pinEnabled();
+      powerMonitor.on("suspend", () => lockApp());
+      idleTimer = setInterval(() => {
+        const minutes = vault.snapshot().settings.pinLock.idleMinutes;
+        if (
+          vault.pinEnabled() &&
+          !locked &&
+          minutes > 0 &&
+          powerMonitor.getSystemIdleTime() >= minutes * 60
+        )
+          lockApp();
+      }, 10000);
       createWindow();
       app.on("activate", () => {
         if (!win) {
@@ -714,4 +852,5 @@ app.on("before-quit", () => {
   transfers?.cancelAll();
   connections?.closeAll();
   localTerminals.closeAll();
+  clearInterval(idleTimer);
 });

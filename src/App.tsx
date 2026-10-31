@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import type {
   AppState,
+  ErkinodeEvent,
   Host,
   Prompt,
   Session,
@@ -54,7 +55,11 @@ const initial: AppState = {
   hosts: [],
   snippets: [],
   knownHosts: {},
-  settings: { fontSize: 14, language: "en" },
+  settings: {
+    fontSize: 14,
+    language: "en",
+    pinLock: { enabled: false, idleMinutes: 0 },
+  },
   sessions: [],
   version: "",
   platform: "",
@@ -119,6 +124,21 @@ export default function App() {
     [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null),
     [updateDismissed, setUpdateDismissed] = useState(false),
     [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [lockStatus, setLockStatus] = useState<{
+      enabled: boolean;
+      locked: boolean;
+      retryAfter: number;
+      idleMinutes: number;
+      digits?: number;
+    } | null>(null),
+    [pinEntry, setPinEntry] = useState(""),
+    [pinError, setPinError] = useState(""),
+    [pinDialog, setPinDialog] = useState<"enable" | "disable" | "idle" | null>(
+      null,
+    ),
+    [pinConfirm, setPinConfirm] = useState(""),
+    [pinIdleMinutes, setPinIdleMinutes] = useState(0),
+    [pinDigits, setPinDigits] = useState<4 | 6>(6);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const notify = (message: string) => {
     setToast(message);
@@ -159,9 +179,29 @@ export default function App() {
       );
       return;
     }
-    void refresh();
-    void checkUpdate();
+    window.erkinode
+      .invoke("lock:status")
+      .then((status) => {
+        setLockStatus(status);
+        if (!status.locked) {
+          void refresh();
+          void checkUpdate();
+        }
+      })
+      .catch((error) => notify(error.message));
     return window.erkinode.onEvent((event) => {
+      if (event.type === "lock-state") {
+        const isLocked = Boolean(
+          (event as ErkinodeEvent & { locked?: boolean }).locked,
+        );
+        setLockStatus((current) =>
+          current ? { ...current, locked: isLocked } : current,
+        );
+        if (isLocked) {
+          setSessions([]);
+          setPage("hosts");
+        } else void refresh();
+      }
       if (event.type === "new-local-terminal")
         void openLocalTerminal(Boolean(event.chooseFolder));
       if (event.type === "status") {
@@ -450,6 +490,72 @@ export default function App() {
     } catch (e) {
       notify((e as Error).message);
     }
+  }
+  if (lockStatus?.locked) {
+    return (
+      <main className="lock-screen">
+        <div className="lock-card">
+          <BrandMark />
+          <div className="eyebrow">{translate("LOCAL VAULT LOCKED")}</div>
+          <h1>{translate("Unlock Erkinode")}</h1>
+          <p>
+            {translate(
+              lockStatus?.digits === 4
+                ? "Enter your 4-digit PIN to open the local workspace."
+                : "Enter your 6-digit PIN to open the local workspace.",
+            )}
+          </p>
+          <form
+            onSubmit={async (event) => {
+              event.preventDefault();
+              setPinError("");
+              try {
+                await window.erkinode.invoke("lock:unlock", pinEntry);
+                setPinEntry("");
+                setLockStatus({ ...lockStatus, locked: false, retryAfter: 0 });
+                await refresh();
+                void checkUpdate();
+              } catch (error) {
+                setPinError((error as Error).message);
+                const status = await window.erkinode
+                  .invoke("lock:status")
+                  .catch(() => null);
+                if (status) setLockStatus(status);
+              }
+            }}
+          >
+            <input
+              autoFocus
+              aria-label={translate("PIN")}
+              type="password"
+              inputMode="numeric"
+              autoComplete="off"
+              pattern={lockStatus?.digits === 4 ? "[0-9]{4}" : "[0-9]{4,6}"}
+              maxLength={lockStatus?.digits || 6}
+              value={pinEntry}
+              onChange={(event) =>
+                setPinEntry(
+                  event.target.value
+                    .replace(/\D/g, "")
+                    .slice(0, lockStatus?.digits || 6),
+                )
+              }
+            />
+            {pinError && <small className="field-error">{pinError}</small>}
+            <button
+              className="primary"
+              disabled={
+                pinEntry.length !== (lockStatus?.digits || 6) &&
+                pinEntry.length !== 4 &&
+                pinEntry.length !== 6
+              }
+            >
+              {translate("Unlock")}
+            </button>
+          </form>
+        </div>
+      </main>
+    );
   }
   return (
     <div className="app-shell">
@@ -1061,6 +1167,17 @@ export default function App() {
                       visible={shown && s.mode === "terminal"}
                       fontSize={state.settings.fontSize}
                       onError={notify}
+                      snippets={state.snippets}
+                      onOpenSftp={() =>
+                        setSessions((prev) =>
+                          prev.map((session) =>
+                            session.id === s.id
+                              ? { ...session, mode: "sftp" }
+                              : session,
+                          ),
+                        )
+                      }
+                      onDisconnect={() => void closeSession(s.id)}
                     />
                   </div>
                   {s.status === "ready" && s.kind !== "local" && (
@@ -1438,6 +1555,75 @@ export default function App() {
                 ))}
               </select>
             </div>
+            <h2 className="subheading">{translate("Security")}</h2>
+            <div className="settings-row">
+              <LockKeyhole size={20} />
+              <div>
+                <strong>{translate("PIN lock")}</strong>
+                <small>
+                  {state.settings.pinLock.enabled
+                    ? translate(
+                        "Locks on launch, sleep, or when you lock it manually.",
+                      )
+                    : translate(
+                        "Optional local lock. Your vault remains protected by the system credential store.",
+                      )}
+                </small>
+              </div>
+              {state.settings.pinLock.enabled ? (
+                <div className="settings-actions">
+                  <button
+                    onClick={() => void window.erkinode.invoke("lock:now")}
+                  >
+                    {translate("Lock now")}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPinEntry("");
+                      setPinDialog("disable");
+                    }}
+                  >
+                    {translate("Disable")}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setPinEntry("");
+                    setPinConfirm("");
+                    setPinIdleMinutes(0);
+                    setPinDialog("enable");
+                  }}
+                >
+                  {translate("Enable")}
+                </button>
+              )}
+            </div>
+            {state.settings.pinLock.enabled && (
+              <div className="settings-row">
+                <div>
+                  <strong>{translate("Lock after inactivity")}</strong>
+                  <small>
+                    {translate(
+                      "Long-running connections are closed when Erkinode locks.",
+                    )}
+                  </small>
+                </div>
+                <button
+                  onClick={() => {
+                    setPinEntry("");
+                    setPinIdleMinutes(state.settings.pinLock.idleMinutes);
+                    setPinDialog("idle");
+                  }}
+                >
+                  {state.settings.pinLock.idleMinutes
+                    ? translate("{{count}} minutes", {
+                        count: state.settings.pinLock.idleMinutes,
+                      })
+                    : translate("Never")}
+                </button>
+              </div>
+            )}
             <h2 className="subheading">{translate("Backups")}</h2>
             <div className="settings-row">
               <Download size={20} />
@@ -1785,6 +1971,172 @@ export default function App() {
                 {translate("Cancel")}
               </button>
               <button className="primary">{translate("Open tunnel")}</button>
+            </footer>
+          </form>
+        </div>
+      )}
+      {pinDialog && (
+        <div className="overlay">
+          <form
+            className="dialog compact"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              try {
+                if (pinDialog === "enable") {
+                  if (pinEntry !== pinConfirm)
+                    throw new Error(translate("PINs do not match"));
+                  await window.erkinode.invoke("lock:setup", {
+                    pin: pinEntry,
+                    idleMinutes: pinIdleMinutes,
+                  });
+                } else if (pinDialog === "disable") {
+                  await window.erkinode.invoke("lock:disable", pinEntry);
+                } else {
+                  await window.erkinode.invoke("lock:idle", {
+                    pin: pinEntry,
+                    idleMinutes: pinIdleMinutes,
+                  });
+                }
+                setPinDialog(null);
+                setPinEntry("");
+                setPinConfirm("");
+                await refresh();
+                const status = await window.erkinode.invoke("lock:status");
+                setLockStatus(status);
+                notify(translate("PIN lock settings saved"));
+              } catch (error) {
+                notify((error as Error).message);
+              }
+            }}
+          >
+            <h2>
+              {translate(
+                pinDialog === "enable"
+                  ? "Enable PIN lock"
+                  : pinDialog === "disable"
+                    ? "Disable PIN lock"
+                    : "Lock after inactivity",
+              )}
+            </h2>
+            {pinDialog === "enable" && (
+              <div className="pin-digits-selector">
+                <button
+                  type="button"
+                  className={pinDigits === 4 ? "active" : ""}
+                  onClick={() => {
+                    setPinDigits(4);
+                    setPinEntry("");
+                    setPinConfirm("");
+                  }}
+                >
+                  {translate("4 digits")}
+                </button>
+                <button
+                  type="button"
+                  className={pinDigits === 6 ? "active" : ""}
+                  onClick={() => {
+                    setPinDigits(6);
+                    setPinEntry("");
+                    setPinConfirm("");
+                  }}
+                >
+                  {translate("6 digits")}
+                </button>
+              </div>
+            )}
+            <p>
+              {translate(
+                pinDialog === "enable"
+                  ? pinDigits === 4
+                    ? "Choose a 4-digit PIN. It is a local app lock, not the encryption key for your vault."
+                    : "Choose a 6-digit PIN. It is a local app lock, not the encryption key for your vault."
+                  : "Enter your current PIN to confirm this change.",
+              )}
+            </p>
+            <label>
+              {translate(pinDialog === "enable" ? "New PIN" : "Current PIN")}
+              <input
+                autoFocus
+                required
+                type="password"
+                inputMode="numeric"
+                autoComplete="off"
+                pattern={
+                  pinDialog === "enable"
+                    ? `[0-9]{${pinDigits}}`
+                    : "[0-9]{4,6}"
+                }
+                maxLength={
+                  pinDialog === "enable"
+                    ? pinDigits
+                    : lockStatus?.digits || 6
+                }
+                value={pinEntry}
+                onChange={(event) =>
+                  setPinEntry(
+                    event.target.value
+                      .replace(/\D/g, "")
+                      .slice(
+                        0,
+                        pinDialog === "enable"
+                          ? pinDigits
+                          : lockStatus?.digits || 6,
+                      ),
+                  )
+                }
+              />
+            </label>
+            {pinDialog === "enable" && (
+              <label>
+                {translate("Confirm PIN")}
+                <input
+                  required
+                  type="password"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  pattern={`[0-9]{${pinDigits}}`}
+                  maxLength={pinDigits}
+                  value={pinConfirm}
+                  onChange={(event) =>
+                    setPinConfirm(
+                      event.target.value.replace(/\D/g, "").slice(0, pinDigits),
+                    )
+                  }
+                />
+              </label>
+            )}
+            {(pinDialog === "enable" || pinDialog === "idle") && (
+              <label>
+                {translate("Lock after inactivity")}
+                <select
+                  value={pinIdleMinutes}
+                  onChange={(event) =>
+                    setPinIdleMinutes(Number(event.target.value))
+                  }
+                >
+                  <option value={0}>{translate("Never")}</option>
+                  <option value={5}>5 {translate("minutes")}</option>
+                  <option value={15}>15 {translate("minutes")}</option>
+                  <option value={30}>30 {translate("minutes")}</option>
+                  <option value={60}>60 {translate("minutes")}</option>
+                </select>
+              </label>
+            )}
+            <footer>
+              <button type="button" onClick={() => setPinDialog(null)}>
+                {translate("Cancel")}
+              </button>
+              <button
+                className="primary"
+                disabled={
+                  pinDialog === "enable"
+                    ? pinEntry.length !== pinDigits ||
+                      pinConfirm.length !== pinDigits
+                    : pinEntry.length !== 4 && pinEntry.length !== 6
+                }
+              >
+                {translate("Save")}
+              </button>
             </footer>
           </form>
         </div>

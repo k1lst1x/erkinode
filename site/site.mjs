@@ -93,7 +93,12 @@ if (!status) {
       status.textContent = `${release.tag_name} · ${release.prerelease ? "Beta release" : "Stable release"} · Downloads hosted on GitHub Releases`;
       document.querySelectorAll("[data-download]").forEach((link) => {
         const target = downloads[link.dataset.download];
-        const asset = link.dataset.format === "zip" ? target.zip : target.asset;
+        const asset =
+          link.dataset.format === "zip"
+            ? target.zip
+            : link.dataset.format === "portable"
+              ? target.portable
+              : target.asset;
         if (asset) {
           link.href = asset.browser_download_url;
           link.removeAttribute("aria-disabled");
@@ -229,6 +234,8 @@ function closePicker() {
 }
 function checksumLabel(name) {
   if (name.endsWith("Windows-x64-Setup.exe")) return "Windows installer · x64";
+  if (name.endsWith("Windows-x64-Portable.exe"))
+    return "Windows portable · x64";
   if (name.endsWith("Linux-x64.AppImage")) return "Linux AppImage · x64";
   if (name.endsWith("macOS-arm64.dmg")) return "macOS DMG · Apple Silicon";
   if (name.endsWith("macOS-arm64.zip")) return "macOS ZIP · Apple Silicon";

@@ -1,4 +1,5 @@
-import "./system-errors.js";
+import { installUncaughtGuard } from "./system-errors.js";
+installUncaughtGuard();
 import { detectRemoteSystem } from "./remote-system.js";
 import { t } from "./i18n.js";
 import ssh2 from "ssh2";
@@ -17,6 +18,16 @@ export const describeFailure = (error, host) =>
 const invoke = (obj, method, ...args) =>
   new Promise((resolve, reject) =>
     obj[method](...args, (e, result) => (e ? reject(e) : resolve(result))),
+  );
+
+const stripTerminalControls = (value) =>
+  value
+    .replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, "")
+    .replace(/\r\n?/g, "\n")
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "");
+export const hasSudoPasswordPrompt = (value) =>
+  /(?:^|\n)\[sudo\][^\n:]{0,160}:\s*$/iu.test(
+    stripTerminalControls(value).slice(-512),
   );
 
 export class Connections {
@@ -73,6 +84,7 @@ export class Connections {
       password = await this.authenticate(host);
       if (password === null) throw new Error(t("Password entry canceled"));
     }
+    if (host.auth === "password" && password) session.authPassword = password;
     let passphrase = host.passphrase;
     if (host.auth === "agent" && !process.env.SSH_AUTH_SOCK)
       throw new Error(
@@ -297,6 +309,21 @@ export class Connections {
       const decoder = new StringDecoder("utf8");
       const output = (chunk) => {
         const data = decoder.write(chunk);
+        s.promptTail = `${s.promptTail || ""}${data}`.slice(-512);
+        if (
+          s.authPassword &&
+          !s.sudoPasswordOffered &&
+          hasSudoPasswordPrompt(s.promptTail)
+        ) {
+          s.sudoPasswordOffered = true;
+          s.sudoPasswordOfferUntil = Date.now() + 30_000;
+          this.emit({ type: "sudo-password-request", sessionId: id });
+          s.sudoOfferTimer = setTimeout(
+            () => this.dismissSudoPassword(id),
+            30_000,
+          );
+          s.sudoOfferTimer.unref?.();
+        }
         s.pending += Buffer.byteLength(data);
         if (s.pending > 256 * 1024) stream.pause();
         this.emit({
@@ -336,7 +363,30 @@ export class Connections {
     if (typeof data !== "string" || Buffer.byteLength(data) > 65536)
       throw new Error(t("Input is too large"));
     if (!s.stream) throw new Error(t("Terminal is not open yet"));
+    if (s.sudoPasswordOffered) this.dismissSudoPassword(id);
     s.stream.write(data);
+  }
+  dismissSudoPassword(id) {
+    const s = this.sessions.get(id);
+    if (!s?.sudoPasswordOffered) return;
+    clearTimeout(s.sudoOfferTimer);
+    s.sudoOfferTimer = null;
+    s.sudoPasswordOffered = false;
+    s.sudoPasswordOfferUntil = 0;
+    this.emit({ type: "sudo-password-dismissed", sessionId: id });
+  }
+  sendSudoPassword(id) {
+    const s = this.ready(id);
+    if (
+      !s.stream ||
+      !s.authPassword ||
+      !s.sudoPasswordOffered ||
+      Date.now() > s.sudoPasswordOfferUntil
+    )
+      throw new Error(t("The sudo password request has expired"));
+    s.promptTail = "";
+    s.stream.write(`${s.authPassword}\n`);
+    this.dismissSudoPassword(id);
   }
   ack(id, bytes) {
     const s = this.sessions.get(id);
@@ -511,6 +561,8 @@ export class Connections {
     const s = this.sessions.get(id);
     if (!s) return;
     s.closed = true;
+    clearTimeout(s.sudoOfferTimer);
+    s.authPassword = null;
     s.systemAbort?.abort();
     for (const [tid, t] of this.tunnels)
       if (t.info.sessionId === id) this.stopTunnel(tid);

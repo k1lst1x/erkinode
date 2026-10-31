@@ -1,6 +1,6 @@
 {
   "name": "erkinode",
-  "version": "0.1.0-beta.2",
+  "version": "1.0.0",
   "description": "Free and open-source SSH and SFTP workspace. Your servers. Your freedom.",
   "private": true,
   "type": "module",
@@ -89,10 +89,16 @@
     },
     "win": {
       "target": [
-        "nsis"
+        "nsis",
+        "portable"
       ],
-      "icon": "build/icon.png",
+      "icon": "build/icon.png"
+    },
+    "nsis": {
       "artifactName": "${productName}-${version}-Windows-${arch}-Setup.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-Windows-${arch}-Portable.${ext}"
     },
     "linux": {
       "target": [

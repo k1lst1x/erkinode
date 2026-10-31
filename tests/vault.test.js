@@ -77,6 +77,10 @@ test("portable backup authenticates ciphertext, validates password, restores all
   assert.throws(() => v.backup("short"), /12/);
   const blob = v.backup("a-very-long-test-password");
   assert.ok(!blob.includes(sample.password));
+  const envelope = JSON.parse(blob);
+  assert.equal(envelope.format, "erkinode-backup");
+  assert.equal(envelope.formatVersion, 1);
+  assert.equal(typeof envelope.createdAt, "string");
   const other = new Vault(path.join(folder, "b"), protector);
   await assert.rejects(
     async () => other.restore(blob, "wrong-password"),
@@ -94,6 +98,44 @@ test("portable backup authenticates ciphertext, validates password, restores all
       other.restore(JSON.stringify(tampered), "a-very-long-test-password"),
     /corrupted/,
   );
+  const changedMetadata = JSON.parse(blob);
+  changedMetadata.createdAt = "2020-01-01T00:00:00.000Z";
+  await assert.rejects(
+    async () =>
+      other.restore(
+        JSON.stringify(changedMetadata),
+        "a-very-long-test-password",
+      ),
+    /corrupted/,
+  );
+});
+test("legacy backup fixtures remain restorable and unsupported formats fail clearly", async (t) => {
+  const folder = await fs.mkdtemp(
+    path.join(os.tmpdir(), "erkinode-legacy-backup-"),
+  );
+  t.after(() => fs.rm(folder, { recursive: true, force: true }));
+  const legacy = await fs.readFile(
+    new URL("./fixtures/harbor-backup-v1.json", import.meta.url),
+    "utf8",
+  );
+  const vault = new Vault(path.join(folder, "vault"), protector);
+  await vault.restore(legacy, "legacy-test-password");
+  assert.deepEqual(vault.data.hosts, []);
+  assert.equal(vault.data.version, 1);
+
+  const renamedLegacy = JSON.parse(legacy);
+  renamedLegacy.format = "erkinode-backup-v1";
+  await vault.restore(JSON.stringify(renamedLegacy), "legacy-test-password");
+  await vault.saveHost(sample);
+
+  const unsupported = JSON.parse(legacy);
+  unsupported.format = "erkinode-backup";
+  unsupported.formatVersion = 999;
+  assert.throws(
+    () => vault.restore(JSON.stringify(unsupported), "legacy-test-password"),
+    /not supported/,
+  );
+  assert.equal(vault.data.hosts.length, 1);
 });
 test("host schema rejects malformed input; clearSecret and deleting jump host are explicit", async (t) => {
   const folder = await fs.mkdtemp(path.join(os.tmpdir(), "erkinode-schema-"));
@@ -142,12 +184,17 @@ test("language preferences survive reload, old vaults default to English, and pa
   await vault.load();
   await vault.settings({ fontSize: 18 });
   await vault.settings({ language: "ru" });
-  assert.deepEqual(vault.snapshot().settings, { fontSize: 18, language: "ru" });
+  assert.deepEqual(vault.snapshot().settings, {
+    fontSize: 18,
+    language: "ru",
+    pinLock: { enabled: false, idleMinutes: 0 },
+  });
   const reloaded = new Vault(file, protector);
   await reloaded.load();
   assert.deepEqual(reloaded.snapshot().settings, {
     fontSize: 18,
     language: "ru",
+    pinLock: { enabled: false, idleMinutes: 0 },
   });
   await reloaded.settings({ fontSize: 16 });
   assert.equal(reloaded.snapshot().settings.language, "ru");
@@ -163,6 +210,7 @@ test("language preferences survive reload, old vaults default to English, and pa
   assert.deepEqual(legacy.snapshot().settings, {
     fontSize: 16,
     language: "en",
+    pinLock: { enabled: false, idleMinutes: 0 },
   });
 });
 
@@ -211,4 +259,35 @@ test("Kazakh language preference survives encrypted save and reload", async (t) 
   assert.equal(loaded.snapshot().settings.language, "kk");
   await loaded.settings({ fontSize: 18 });
   assert.equal(loaded.snapshot().settings.language, "kk");
+});
+
+test("PIN lock stores only a salted verifier and preserves settings across reloads", async (t) => {
+  const folder = await fs.mkdtemp(path.join(os.tmpdir(), "erkinode-pin-"));
+  t.after(() => fs.rm(folder, { recursive: true, force: true }));
+  const file = path.join(folder, "vault.json");
+  const vault = new Vault(file, protector);
+  await vault.setPin("123456", 15);
+  assert.equal(vault.pinEnabled(), true);
+  assert.equal(vault.verifyPin("123456"), true);
+  assert.equal(vault.verifyPin("654321"), false);
+  assert.deepEqual(vault.snapshot().settings.pinLock, {
+    enabled: true,
+    idleMinutes: 15,
+  });
+  assert.equal(vault.snapshot().settings.pinLock.hash, undefined);
+  const loaded = new Vault(file, protector);
+  await loaded.load();
+  assert.equal(loaded.verifyPin("123456"), true);
+  await loaded.setPinIdleMinutes(30);
+  assert.equal(loaded.snapshot().settings.pinLock.idleMinutes, 30);
+  await loaded.disablePin();
+  assert.equal(loaded.pinEnabled(), false);
+  assert.equal(loaded.verifyPin("123456"), false);
+
+  await loaded.setPin("4321", 5);
+  assert.equal(loaded.pinEnabled(), true);
+  assert.equal(loaded.pinDigits(), 4);
+  assert.equal(loaded.verifyPin("4321"), true);
+  assert.equal(loaded.verifyPin("1234"), false);
+  await loaded.disablePin();
 });

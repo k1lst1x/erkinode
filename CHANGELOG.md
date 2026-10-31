@@ -1,13 +1,26 @@
 # Changelog
 
-## 0.1.0-beta.2 — 2026-10-30
+## 1.0.0 — 2026-10-31
+
+### Terminal and SSH
+
+- Add a terminal context menu on right-click or middle-click with Copy, Paste, Search, snippets, Clear, SFTP, and Disconnect actions.
+- Confirm multiline clipboard pastes before they can execute terminal commands and show short copy/paste confirmations.
+- Detect standard interactive `sudo` password prompts and offer an explicit choice between sending the in-memory SSH password and entering a password manually.
+- Native local terminals alongside SSH sessions with login shells and full TTY support.
+
+### Local security
+
+- Add an optional six-digit PIN lock, disabled by default, with launch, sleep, manual, and configurable inactivity locking.
+- Keep vault encryption anchored in the operating-system credential store; store only a salted Scrypt PIN verifier and rate-limit failed attempts.
+- Close active connections and local shells whenever the workspace locks.
+- Restore encrypted backups created with legacy markers while exporting a versioned, product-independent envelope.
 
 ### Packaging
 
-- Ad-hoc sign the complete macOS application bundle so unsigned beta builds retain valid code integrity on both Apple Silicon and Intel Macs.
-- Verify the macOS bundle and its required Electron entitlements during CI before release artifacts are staged.
+- Publish a no-install Windows x64 portable executable alongside the existing installer, with checksums and build-provenance attestation.
+- Ad-hoc sign the complete macOS application bundle so builds retain valid code integrity on both Apple Silicon and Intel Macs.
 
-## 0.1.0-beta.1 — 2026-10-28
 
 Initial beta release of Erkinode — a free, open-source SSH, SFTP, and local terminal desktop workspace.
 

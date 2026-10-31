@@ -91,6 +91,10 @@ export function releaseDownloads(release, repository) {
         asset: find(target.suffix) || null,
         zip:
           target.os === "mac" ? find(`macOS-${target.arch}.zip`) || null : null,
+        portable:
+          target.os === "win"
+            ? find(`Windows-${target.arch}-Portable.exe`) || null
+            : null,
       },
     ]),
   );
